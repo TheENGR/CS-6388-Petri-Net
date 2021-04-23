@@ -185,7 +185,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
         
 		// https://github.com/clientIO/joint/blob/master/demo/petri%20nets/src/pn.js#L124
 		petriNet.setFireableEvents(Object.keys(petriNet.transitions).filter(transitionID => {
-			var placesBefore = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound: true })
+			var placesBefore = this._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound: true })
 				.map(link => {
 					return link.getSourceElement();
 				});

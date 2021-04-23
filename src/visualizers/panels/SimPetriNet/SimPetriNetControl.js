@@ -99,6 +99,14 @@ define([
             self._initPetriNet();
         }
     };
+	
+	SimPetriNetControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
+        if (this._currentNodeId === activeObjectId) {
+            // The same node selected as before - do not trigger
+        } else {
+            this.selectedObjectChanged(activeObjectId);
+        }
+    };
 
     /* * * * * * * * PetriNet manipulation functions * * * * * * * */
     SimPetriNetControl.prototype._initPetriNet = function () {
@@ -109,6 +117,7 @@ define([
         self._client.getAllMetaNodes().forEach(node => {
             META[node.getAttribute('name')] = node.getId(); //we just need the id...
         });
+	console.log(META)
 		
         //now we collect all data we need for network visualization
 
@@ -116,10 +125,11 @@ define([
         const elementIds = petriNetNode.getChildrenIds();
         const petriNet = {places:[], transitions:[], arcs:[]};
         elementIds.forEach(elementId => {
+	    console.log(elementId)
             const node = self._client.getNode(elementId);
             // the simple way of checking type
 			
-			if (node.isTypeOf(META['State'])) { 
+			if (node.isTypeOf(META['Place'])) { 
 				petriNet.places[elementId] = {name: node.getAttribute('name'), tokens: node.getAttribute('Tokens'), position: node.getRegistry('position')}
 			} else if (node.isTypeOf(META['Transition'])) { 
 				petriNet.transitions[elementId] = {name: node.getAttribute('name'), position: node.getRegistry('position')}
@@ -157,11 +167,22 @@ define([
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     SimPetriNetControl.prototype.destroy = function () {
 	console.log("SimPetriNetControl destroy")
+	this._detachClientEventListeners();
         this._removeToolbarItems();
+    };
+	
+    SimPetriNetControl.prototype._attachClientEventListeners = function () {
+        this._detachClientEventListeners();
+        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+    };
+
+    SimPetriNetControl.prototype._detachClientEventListeners = function () {
+        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
     };
 
     SimPetriNetControl.prototype.onActivate = function () {
 	console.log("SimPetriNetControl onActivate")
+	this._attachClientEventListeners();
         this._displayToolbarItems();
 
         if (typeof this._currentNodeId === 'string') {
@@ -171,6 +192,7 @@ define([
 
     SimPetriNetControl.prototype.onDeactivate = function () {
 	console.log("SimPetriNetControl onDeactivate")
+	this._detachClientEventListeners();
         this._hideToolbarItems();
     };
 

@@ -8,14 +8,10 @@ var config = require('webgme/config/config.default'),
 
 // The paths can be loaded from the webgme-setup.json
 config.plugin.basePaths.push(__dirname + '/../src/plugins');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/PetriNet');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/StateMachine');
 
-
-
 config.visualization.panelPaths.push(__dirname + '/../src/visualizers/panels');
-
-
-
 
 // Visualizer descriptors
 config.visualization.visualizerDescriptors.push(__dirname + '/../src/visualizers/Visualizers.json');
@@ -27,6 +23,6 @@ config.requirejsPaths = {
 };
 
 
-config.mongo.uri = 'mongodb://127.0.0.1:27017/statemachinejoint';
+config.mongo.uri = 'mongodb://127.0.0.1:27017/cs_6388_petri_net';
 validateConfig(config);
 module.exports = config;

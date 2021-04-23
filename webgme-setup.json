@@ -1,29 +1,43 @@
 {
-  "components": {
-    "visualizers": {
-      "SimSM": {
-        "src": "panels/SimSM/SimSMPanel",
-        "title": "SimSM",
-        "panel": "src/visualizers/panels/SimSM",
-        "secondary": false,
-        "widget": "src/visualizers/widgets/SimSM"
-      }
-    },
-    "plugins": {
-      "ReachCheck": {
-        "src": "src/plugins/ReachCheck",
-        "test": "test/plugins/ReachCheck"
-      }
-    },
-    "seeds": {
-      "StateMachine": {
-        "src": "src/seeds/StateMachine"
-      }
-    }
-  },
-  "dependencies": {
-    "visualizers": {},
-    "plugins": {},
-    "seeds": {}
-  }
+	"components": {
+		"visualizers": {
+			"SimSM": {
+				"src": "panels/SimSM/SimSMPanel",
+				"title": "SimSM",
+				"panel": "src/visualizers/panels/SimSM",
+				"secondary": false,
+				"widget": "src/visualizers/widgets/SimSM"
+			},
+			"SimPetriNet": {
+				"src": "panels/SimPetriNet/SimPetriNetPanel",
+				"title": "SimPetriNet",
+				"panel": "src/visualizers/panels/SimPetriNet",
+				"secondary": false,
+				"widget": "src/visualizers/widgets/SimPetriNet"
+			}
+		},
+		"plugins": {
+			"ReachCheck": {
+				"src": "src/plugins/ReachCheck",
+				"test": "test/plugins/ReachCheck"
+			},
+			"PetriNetClassification": {
+				"src": "src/plugins/PetriNetClassification",
+				"test": "test/plugins/PetriNetClassification"
+			}
+		},
+		"seeds": {
+			"StateMachine": {
+				"src": "src/seeds/StateMachine"
+			},
+			"PetriNet": {
+				"src": "src/seeds/PetriNet"
+			}
+		}
+	},
+	"dependencies": {
+		"visualizers": {},
+		"plugins": {},
+		"seeds": {}
+	}
 }

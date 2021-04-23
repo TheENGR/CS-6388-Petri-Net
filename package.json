@@ -1,5 +1,6 @@
 {
-  "name": "statemachinejoint",
+  "name": "petrinet",
+  "description": "PetriNet design studio for WebGME",
   "scripts": {
     "start": "node app.js",
     "test": "node ./node_modules/mocha/bin/mocha --recursive test",

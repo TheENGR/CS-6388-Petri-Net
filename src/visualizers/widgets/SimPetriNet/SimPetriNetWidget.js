@@ -23,6 +23,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
     }
 
     SimPetriNetWidget.prototype._initialize = function () {
+	console.log("_initialize")
         console.log(joint);
         var width = this._el.width(),
             height = this._el.height(),
@@ -36,14 +37,14 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
             el: this._el,
             width : width,
             height: height,
-			gridSize: 10,
+		gridSize: 10,
 			defaultAnchor: { name: 'perpendicular' },
 			defaultConnectionPoint: { name: 'boundary' },
             model: this._jointGraph,
             interactive: false
         });
 		
-		this.PetriNet = joint.shapes.pn;
+	this.PetriNet = joint.shapes.pn;
 
         this._webgmePetriNet = null;
     };
@@ -54,6 +55,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 
     // State PetriNet manipulating functions called from the controller
     SimPetriNetWidget.prototype.initPetriNet = function (petriNetDescriptor) {
+	console.log("initPetriNet")
         const self = this;
         console.log(petriNetDescriptor);
 

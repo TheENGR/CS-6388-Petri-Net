@@ -28,12 +28,14 @@ WORKDIR /usr/app
 
 # copy app source
 ADD config /usr/app/config/
-ADD src /usr/app/src/
 ADD package.json /usr/app/
 ADD webgme-setup.json /usr/app/
 ADD app.js /usr/app/
 
 # Install node-modules
 RUN npm install
+
+# Copy in code after install
+ADD src /usr/app/src/
  
 CMD ["npm", "start"]

@@ -96,6 +96,14 @@ define([
             self._initPetriNet();
         }
     };
+	
+	SimPetriNetControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
+        if (this._currentNodeId === activeObjectId) {
+            // The same node selected as before - do not trigger
+        } else {
+            this.selectedObjectChanged(activeObjectId);
+        }
+    };
 
     /* * * * * * * * PetriNet manipulation functions * * * * * * * */
     SimPetriNetControl.prototype._initPetriNet = function () {
@@ -152,6 +160,15 @@ define([
     SimPetriNetControl.prototype.destroy = function () {
         this._detachClientEventListeners();
         this._removeToolbarItems();
+    };
+	
+	SimPetriNetControl.prototype._attachClientEventListeners = function () {
+        this._detachClientEventListeners();
+        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
+    };
+
+    SimPetriNetControl.prototype._detachClientEventListeners = function () {
+        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
     };
 
     SimPetriNetControl.prototype.onActivate = function () {

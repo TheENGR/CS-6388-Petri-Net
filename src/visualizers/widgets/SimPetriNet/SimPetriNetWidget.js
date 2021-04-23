@@ -122,7 +122,9 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 		self._jointGraph.addCell([...Object.values(petriNet.places).map(p => p.joint), ...Object.values(petriNet.transitions).map(t => t.joint)])
 		self._jointGraph.addCell(Object.values(petriNet.arcs).map(a => a.joint))
 		//now refresh the visualization
-		this.PetriNet.PlaceView.renderTokens()
+		console.log(this.PetriNet.PlaceView)
+		console.log(this.PetriNet.PlaceView.prototype)
+		this.PetriNet.PlaceView.prototype.render()
 		self._jointPaper.updateViews();
 		self._decoratePetriNet();
 	};

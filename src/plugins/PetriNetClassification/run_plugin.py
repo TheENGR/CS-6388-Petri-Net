@@ -24,9 +24,9 @@ ACTIVE_NODE_PATH = sys.argv[4].strip('"')
 ACTIVE_SELECTION_PATHS = []
 
 if sys.argv[5] != '""':
-    ACTIVE_SELECTION_PATHS = sys.argv[5].strip('"').split(',')
-    if ACTIVE_SELECTION_PATHS[0] == '':
-        ACTIVE_SELECTION_PATHS.pop(0)
+	ACTIVE_SELECTION_PATHS = sys.argv[5].strip('"').split(',')
+	if ACTIVE_SELECTION_PATHS[0] == '':
+		ACTIVE_SELECTION_PATHS.pop(0)
 
 NAMESPACE = sys.argv[6].strip('"')
 

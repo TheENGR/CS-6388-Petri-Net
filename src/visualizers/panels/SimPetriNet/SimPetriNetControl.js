@@ -97,76 +97,50 @@ define([
         }
     };
 
-
-    SimPetriNetControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
-        if (this._currentNodeId === activeObjectId) {
-            // The same node selected as before - do not trigger
-        } else {
-            this.selectedObjectChanged(activeObjectId);
-        }
-    };
-
-    /* * * * * * * * Machine manipulation functions * * * * * * * */
+    /* * * * * * * * PetriNet manipulation functions * * * * * * * */
     SimPetriNetControl.prototype._initPetriNet = function () {
         const self = this;
         //just for the ease of use, lets create a META dictionary
-        const rawMETA = self._client.getAllMetaNodes();
         const META = {};
-        rawMETA.forEach(node => {
+        self._client.getAllMetaNodes().forEach(node => {
             META[node.getAttribute('name')] = node.getId(); //we just need the id...
         });
+		
         //now we collect all data we need for network visualization
-        //we need our states (names, position, type), need the set of next state (with event names)
+
         const petriNetNode = self._client.getNode(self._currentNodeId);
         const elementIds = petriNetNode.getChildrenIds();
-        const petriNet = {init: null, states:{}};
+        const petriNet = {places:[], transitions:[], arcs:[]};
         elementIds.forEach(elementId => {
             const node = self._client.getNode(elementId);
             // the simple way of checking type
-            if (node.isTypeOf(META['State'])) {
-                //right now we only interested in states...
-                const state = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), isEnd: node.isTypeOf(META['End'])};
-                // one way to check meta-type in the client context - though it does not check for generalization types like State
-                if ('Init' === self._client.getNode(node.getMetaTypeId()).getAttribute('name')) {
-                    petriNet.init = elementId;
-                }
-
-                // this is in no way optimal, but shows clearly what we are looking for when we collect the data
-                elementIds.forEach(nextId => {
-                    const nextNode = self._client.getNode(nextId);
-                    if(nextNode.isTypeOf(META['Transition']) && nextNode.getPointerId('src') === elementId) {
-                        state.next[nextNode.getAttribute('event')] = nextNode.getPointerId('dst');
-                    }
-                });
-                petriNet.states[elementId] = state;
-            }
+			
+			if (node.isTypeOf(META['State'])) { 
+				petriNet.places[elementId] = {name: node.getAttribute('name'), tokens: node.getAttribute('Tokens'), position: node.getRegistry('position')}
+			} else if (node.isTypeOf(META['Transition'])) { 
+				petriNet.transitions[elementId] = {name: node.getAttribute('name'), position: node.getRegistry('position')}
+			} else if (node.isTypeOf(META['Arc'])) { 
+				petriNet.arcs[elementId] = {src: node.getPointerId('src'), dst: node.getPointerId('dst'), placeToTransition: node.isTypeOf(META['PlaceToTransitionArc'])}
+			} 
         });
         petriNet.setFireableEvents = this.setFireableEvents;
 
-        self._widget.initMachine(petriNet);
+        self._widget.initPetriNet(petriNet);
     };
 
     SimPetriNetControl.prototype.clearPetriNet = function () {
         const self = this;
         self._networkRootLoaded = false;
-        self._widget.destroyMachine();
+        self._widget.destroyPetriNet();
     };
 
     SimPetriNetControl.prototype.setFireableEvents = function (events) {
-        this._fireableEvents = events;
+        this._fireableEvents = [];
         if (events && events.length > 1) {
-            // we need to fill the dropdow button with options
-            this.$btnEventSelector.clear();
-            events.forEach(event => {
-                this.$btnEventSelector.addButton({
-                    text: event,
-                    title: 'fire event: '+ event,
-                    data: {event: event},
-                    clickFn: data => {
-                        this._widget.fireEvent(data.event);
-                    }
-                });
-            });
+            let numEvents = events.length;
+			while (numEvents > 0) {
+				this._fireableEvents.push(events.splice(Math.floor(Math.random() * events.length),1))
+			}
         } else if (events && events.length === 0) {
             this._fireableEvents = null;
         }
@@ -178,15 +152,6 @@ define([
     SimPetriNetControl.prototype.destroy = function () {
         this._detachClientEventListeners();
         this._removeToolbarItems();
-    };
-
-    SimPetriNetControl.prototype._attachClientEventListeners = function () {
-        this._detachClientEventListeners();
-        WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
-    };
-
-    SimPetriNetControl.prototype._detachClientEventListeners = function () {
-        WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
     };
 
     SimPetriNetControl.prototype.onActivate = function () {
@@ -211,10 +176,7 @@ define([
                 this._toolbarItems[i].show();
             }
             if (this._fireableEvents === null) {
-                this.$btnEventSelector.hide();
                 this.$btnSingleEvent.hide();
-            } else if (this._fireableEvents.length == 1) {
-                this.$btnEventSelector.hide();
             } else {
                 this.$btnSingleEvent.hide();
             }
@@ -251,14 +213,14 @@ define([
 
         /************** Go to hierarchical parent button ****************/
         this.$btnReachCheck = toolBar.addButton({
-            title: 'Check state machine reachability properties',
+            title: 'Check Petri Net Classifications',
             icon: 'glyphicon glyphicon-question-sign',
             clickFn: function (/*data*/) {
-                const context = self._client.getCurrentPluginContext('ReachCheck',self._currentNodeId, []);
+                const context = self._client.getCurrentPluginContext('PetriNetClassification',self._currentNodeId, []);
                 // !!! it is important to fill out or pass an empty object as the plugin config otherwise we might get errors...
                 context.pluginConfig = {};
                 self._client.runServerPlugin(
-                    'ReachCheck', 
+                    'PetriNetClassification', 
                     context, 
                     function(err, result){
                         // here comes any additional processing of results or potential errors.
@@ -269,28 +231,21 @@ define([
         });
         this._toolbarItems.push(this.$btnReachCheck);
 
-        this.$btnResetMachine = toolBar.addButton({
+        this.$btnResetPetriNet = toolBar.addButton({
             title: 'Reset simulator',
             icon: 'glyphicon glyphicon-fast-backward',
             clickFn: function (/*data*/) {
-                self._widget.resetMachine();
+                self._widget.resetPetriNet();
             }
         });
-        this._toolbarItems.push(this.$btnResetMachine);
-
-        // when there are multiple events to choose from we offer a selector
-        this.$btnEventSelector = toolBar.addDropDownButton({
-            text: 'event'
-        });
-        this._toolbarItems.push(this.$btnEventSelector);
-        this.$btnEventSelector.hide();
+        this._toolbarItems.push(this.$btnResetPetriNet);
 
         // if there is only one event we just show a play button
         this.$btnSingleEvent = toolBar.addButton({
             title: 'Fire event',
             icon: 'glyphicon glyphicon-play',
             clickFn: function (/*data*/) {
-                self._widget.fireEvent(self._fireableEvents[0]);
+                self._widget.fireEvent(self._fireableEvents);
             }
         });
         this._toolbarItems.push(this.$btnSingleEvent);

@@ -6,20 +6,20 @@
 define([
     'js/PanelBase/PanelBaseWithHeader',
     'js/PanelManager/IActivePanel',
-    'widgets/SimSM/SimSMWidget',
-    './SimSMControl'
+    'widgets/SimPetriNet/SimPetriNetWidget',
+    './SimPetriNetControl'
 ], function (
     PanelBaseWithHeader,
     IActivePanel,
-    SimSMWidget,
-    SimSMControl
+    SimPetriNetWidget,
+    SimPetriNetControl
 ) {
     'use strict';
 
-    function SimSMPanel(layoutManager, params) {
+    function SimPetriNetPanel(layoutManager, params) {
         var options = {};
         //set properties from options
-        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'SimSMPanel';
+        options[PanelBaseWithHeader.OPTIONS.LOGGER_INSTANCE_NAME] = 'SimPetriNetPanel';
         options[PanelBaseWithHeader.OPTIONS.FLOATING_TITLE] = true;
 
         //call parent's constructor
@@ -34,10 +34,10 @@ define([
     }
 
     //inherit from PanelBaseWithHeader
-    _.extend(SimSMPanel.prototype, PanelBaseWithHeader.prototype);
-    _.extend(SimSMPanel.prototype, IActivePanel.prototype);
+    _.extend(SimPetriNetPanel.prototype, PanelBaseWithHeader.prototype);
+    _.extend(SimPetriNetPanel.prototype, IActivePanel.prototype);
 
-    SimSMPanel.prototype._initialize = function () {
+    SimPetriNetPanel.prototype._initialize = function () {
         var self = this;
 
         //set Widget title
@@ -60,19 +60,19 @@ define([
 
     /* OVERRIDE FROM WIDGET-WITH-HEADER */
     /* METHOD CALLED WHEN THE WIDGET'S READ-ONLY PROPERTY CHANGES */
-    SimSMPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
+    SimPetriNetPanel.prototype.onReadOnlyChanged = function (isReadOnly) {
         //apply parent's onReadOnlyChanged
         PanelBaseWithHeader.prototype.onReadOnlyChanged.call(this, isReadOnly);
 
     };
 
-    SimSMPanel.prototype.onResize = function (width, height) {
+    SimPetriNetPanel.prototype.onResize = function (width, height) {
         this.logger.debug('onResize --> width: ' + width + ', height: ' + height);
         this.widget.onWidgetContainerResize(width, height);
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
-    SimSMPanel.prototype.destroy = function () {
+    SimPetriNetPanel.prototype.destroy = function () {
         this.control.destroy();
         this.widget.destroy();
 
@@ -81,19 +81,19 @@ define([
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    SimSMPanel.prototype.onActivate = function () {
+    SimPetriNetPanel.prototype.onActivate = function () {
         this.widget.onActivate();
         this.control.onActivate();
         WebGMEGlobal.KeyboardManager.setListener(this.widget);
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    SimSMPanel.prototype.onDeactivate = function () {
+    SimPetriNetPanel.prototype.onDeactivate = function () {
         this.widget.onDeactivate();
         this.control.onDeactivate();
         WebGMEGlobal.KeyboardManager.setListener(undefined);
         WebGMEGlobal.Toolbar.refresh();
     };
 
-    return SimSMPanel;
+    return SimPetriNetPanel;
 });

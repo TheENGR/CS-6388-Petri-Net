@@ -15,7 +15,7 @@ define([
 
     'use strict';
 
-    function SimSMControl(options) {
+    function SimPetriNetControl(options) {
 
         this._logger = options.logger.fork('Control');
 
@@ -38,7 +38,7 @@ define([
         this._logger.debug('ctor finished');
     }
 
-    SimSMControl.prototype._initWidgetEventHandlers = function () {
+    SimPetriNetControl.prototype._initWidgetEventHandlers = function () {
         this._widget.onNodeClick = function (id) {
             // Change the current active object
             WebGMEGlobal.State.registerActiveObject(id);
@@ -49,7 +49,7 @@ define([
     // One major concept here is with managing the territory. The territory
     // defines the parts of the project that the visualizer is interested in
     // (this allows the browser to then only load those relevant parts).
-    SimSMControl.prototype.selectedObjectChanged = function (nodeId) {
+    SimPetriNetControl.prototype.selectedObjectChanged = function (nodeId) {
         var self = this;
 
         // Remove current territory patterns
@@ -75,7 +75,7 @@ define([
     };
 
     /* * * * * * * * Node Event Handling * * * * * * * */
-    SimSMControl.prototype._eventCallback = function (events) {
+    SimPetriNetControl.prototype._eventCallback = function (events) {
         const self = this;
         console.log(events);
         events.forEach(event => {
@@ -84,7 +84,7 @@ define([
                     if (event.etype == 'load' || event.etype == 'update') {
                         self._networkRootLoaded = true;
                     } else {
-                        self.clearSM();
+                        self.clearPetriNet();
                         return;
                     }
                 }
@@ -93,12 +93,12 @@ define([
 
         if (events.length && events[0].etype === 'complete' && self._networkRootLoaded) {
             // complete means we got all requested data and we do not have to wait for additional load cycles
-            self._initSM();
+            self._initPetriNet();
         }
     };
 
 
-    SimSMControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
+    SimPetriNetControl.prototype._stateActiveObjectChanged = function (model, activeObjectId) {
         if (this._currentNodeId === activeObjectId) {
             // The same node selected as before - do not trigger
         } else {
@@ -107,7 +107,7 @@ define([
     };
 
     /* * * * * * * * Machine manipulation functions * * * * * * * */
-    SimSMControl.prototype._initSM = function () {
+    SimPetriNetControl.prototype._initPetriNet = function () {
         const self = this;
         //just for the ease of use, lets create a META dictionary
         const rawMETA = self._client.getAllMetaNodes();
@@ -117,9 +117,9 @@ define([
         });
         //now we collect all data we need for network visualization
         //we need our states (names, position, type), need the set of next state (with event names)
-        const smNode = self._client.getNode(self._currentNodeId);
-        const elementIds = smNode.getChildrenIds();
-        const sm = {init: null, states:{}};
+        const petriNetNode = self._client.getNode(self._currentNodeId);
+        const elementIds = petriNetNode.getChildrenIds();
+        const petriNet = {init: null, states:{}};
         elementIds.forEach(elementId => {
             const node = self._client.getNode(elementId);
             // the simple way of checking type
@@ -128,7 +128,7 @@ define([
                 const state = {name: node.getAttribute('name'), next:{}, position: node.getRegistry('position'), isEnd: node.isTypeOf(META['End'])};
                 // one way to check meta-type in the client context - though it does not check for generalization types like State
                 if ('Init' === self._client.getNode(node.getMetaTypeId()).getAttribute('name')) {
-                    sm.init = elementId;
+                    petriNet.init = elementId;
                 }
 
                 // this is in no way optimal, but shows clearly what we are looking for when we collect the data
@@ -138,21 +138,21 @@ define([
                         state.next[nextNode.getAttribute('event')] = nextNode.getPointerId('dst');
                     }
                 });
-                sm.states[elementId] = state;
+                petriNet.states[elementId] = state;
             }
         });
-        sm.setFireableEvents = this.setFireableEvents;
+        petriNet.setFireableEvents = this.setFireableEvents;
 
-        self._widget.initMachine(sm);
+        self._widget.initMachine(petriNet);
     };
 
-    SimSMControl.prototype.clearSM = function () {
+    SimPetriNetControl.prototype.clearPetriNet = function () {
         const self = this;
         self._networkRootLoaded = false;
         self._widget.destroyMachine();
     };
 
-    SimSMControl.prototype.setFireableEvents = function (events) {
+    SimPetriNetControl.prototype.setFireableEvents = function (events) {
         this._fireableEvents = events;
         if (events && events.length > 1) {
             // we need to fill the dropdow button with options
@@ -175,21 +175,21 @@ define([
     };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
-    SimSMControl.prototype.destroy = function () {
+    SimPetriNetControl.prototype.destroy = function () {
         this._detachClientEventListeners();
         this._removeToolbarItems();
     };
 
-    SimSMControl.prototype._attachClientEventListeners = function () {
+    SimPetriNetControl.prototype._attachClientEventListeners = function () {
         this._detachClientEventListeners();
         WebGMEGlobal.State.on('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged, this);
     };
 
-    SimSMControl.prototype._detachClientEventListeners = function () {
+    SimPetriNetControl.prototype._detachClientEventListeners = function () {
         WebGMEGlobal.State.off('change:' + CONSTANTS.STATE_ACTIVE_OBJECT, this._stateActiveObjectChanged);
     };
 
-    SimSMControl.prototype.onActivate = function () {
+    SimPetriNetControl.prototype.onActivate = function () {
         this._attachClientEventListeners();
         this._displayToolbarItems();
 
@@ -198,13 +198,13 @@ define([
         }
     };
 
-    SimSMControl.prototype.onDeactivate = function () {
+    SimPetriNetControl.prototype.onDeactivate = function () {
         this._detachClientEventListeners();
         this._hideToolbarItems();
     };
 
     /* * * * * * * * * * Updating the toolbar * * * * * * * * * */
-    SimSMControl.prototype._displayToolbarItems = function () {
+    SimPetriNetControl.prototype._displayToolbarItems = function () {
 
         if (this._toolbarInitialized === true) {
             for (var i = this._toolbarItems.length; i--;) {
@@ -223,7 +223,7 @@ define([
         }
     };
 
-    SimSMControl.prototype._hideToolbarItems = function () {
+    SimPetriNetControl.prototype._hideToolbarItems = function () {
 
         if (this._toolbarInitialized === true) {
             for (var i = this._toolbarItems.length; i--;) {
@@ -232,7 +232,7 @@ define([
         }
     };
 
-    SimSMControl.prototype._removeToolbarItems = function () {
+    SimPetriNetControl.prototype._removeToolbarItems = function () {
 
         if (this._toolbarInitialized === true) {
             for (var i = this._toolbarItems.length; i--;) {
@@ -241,7 +241,7 @@ define([
         }
     };
 
-    SimSMControl.prototype._initializeToolbar = function () {
+    SimPetriNetControl.prototype._initializeToolbar = function () {
         var self = this,
             toolBar = WebGMEGlobal.Toolbar;
 
@@ -302,5 +302,5 @@ define([
         this._toolbarInitialized = true;
     };
 
-    return SimSMControl;
+    return SimPetriNetControl;
 });

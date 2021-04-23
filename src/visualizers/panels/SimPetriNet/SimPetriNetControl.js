@@ -117,7 +117,6 @@ define([
 		self._client.getAllMetaNodes().forEach(node => {
 			META[node.getAttribute('name')] = node.getId(); //we just need the id...
 		});
-	console.log(META)
 		
 		//now we collect all data we need for network visualization
 
@@ -125,7 +124,6 @@ define([
 		const elementIds = petriNetNode.getChildrenIds();
 		const petriNet = {places:[], transitions:[], arcs:[]};
 		elementIds.forEach(elementId => {
-		console.log(elementId)
 			const node = self._client.getNode(elementId);
 			// the simple way of checking type
 			
@@ -152,10 +150,11 @@ define([
 	SimPetriNetControl.prototype.setFireableEvents = function (events) {
 	console.log("SimPetriNetControl setFireableEvents")
 		this._fireableEvents = [];
-		if (events && events.length > 1) {
+		if (events && events.length > 0) {
 			let numEvents = events.length;
 			while (numEvents > 0) {
 				this._fireableEvents.push(events.splice(Math.floor(Math.random() * events.length),1))
+				numEvents -= 1;
 			}
 		} else if (events && events.length === 0) {
 			this._fireableEvents = null;
@@ -205,8 +204,6 @@ define([
 				this._toolbarItems[i].show();
 			}
 			if (this._fireableEvents === null) {
-				this.$btnSingleEvent.hide();
-			} else {
 				this.$btnSingleEvent.hide();
 			}
 		} else {
@@ -277,7 +274,7 @@ define([
 			title: 'Fire event',
 			icon: 'glyphicon glyphicon-play',
 			clickFn: function (/*data*/) {
-				self._widget.fireEvent(self._fireableEvents);
+				self._widget.fireEvent(self._fireableEvents[0]);
 			}
 		});
 		this._toolbarItems.push(this.$btnSingleEvent);

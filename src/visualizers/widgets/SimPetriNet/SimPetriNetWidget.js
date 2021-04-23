@@ -37,15 +37,14 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 			el: this._el,
 			width : width,
 			height: height,
-		gridSize: 10,
+			gridSize: 10,
 			defaultAnchor: { name: 'perpendicular' },
 			defaultConnectionPoint: { name: 'boundary' },
 			model: this._jointGraph,
 			interactive: false
 		});
 		
-	this.PetriNet = joint.shapes.pn;
-
+		this.PetriNet = joint.shapes.pn;
 		this._webgmePetriNet = null;
 	};
 
@@ -57,12 +56,12 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 	SimPetriNetWidget.prototype.initPetriNet = function (petriNetDescriptor) {
 	console.log("initPetriNet")
 		const self = this;
-		console.log(petriNetDescriptor);
 
 		self._webgmePetriNet = petriNetDescriptor;
 		self._webgmePetriNet.current = self._webgmePetriNet.init;
 		self._jointGraph.clear();
 		const petriNet = self._webgmePetriNet;
+
 		// First add the places
 		Object.keys(petriNet.places).forEach(ID => {
 			petriNet.places[ID].joint = new this.PetriNet.Place({
@@ -81,7 +80,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 				},
 				tokens: petriNet.places[ID].tokens
 			});
-			petriNet.places[ID].joint.addTo(self._jointGraph);
+			//petriNet.places[ID].joint.addTo(self._jointGraph);
 		});
 		
 		// Then add the transitions
@@ -99,7 +98,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 					}
 				}
 			});
-			petriNet.transitions[ID].joint.addTo(self._jointGraph);
+			//petriNet.transitions[ID].joint.addTo(self._jointGraph);
 		});
 		
 		// Finally add the links
@@ -118,10 +117,12 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 					}
 				}
 			});
-			petriNet.arcs[ID].joint.addTo(self._jointGraph);
+			//petriNet.arcs[ID].joint.addTo(self._jointGraph);
 		});
-
+		self._jointGraph.addCell([...Object.values(petriNet.places).map(p => p.joint), ...Object.values(petriNet.transitions).map(t => t.joint)])
+		self._jointGraph.addCell(Object.values(petriNet.arcs).map(a => a.joint))
 		//now refresh the visualization
+		this.PetriNet.PlaceView.renderTokens()
 		self._jointPaper.updateViews();
 		self._decoratePetriNet();
 	};
@@ -132,14 +133,12 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 
 	SimPetriNetWidget.prototype.fireEvent = function (fireableTransitions) {
 		const self = this;
-		const current = self._webgmePetriNet.states[self._webgmePetriNet.current];
-		const link = current.jointNext[event];
-		const linkView = link.findView(self._jointPaper);
-		linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), {duration:500}, function() {
-		   self._webgmePetriNet.current = current.next[event];
-		   self._decoratePetriNet();
-		});
+		const petriNet = self._webgmePetriNet;
+		petriNet.setFireableEvents(null)
 		
+		if (fireableTransitions === undefined) {
+			return
+		}
 		fireableTransitions.forEach(transitionID => {
 			var inbound  = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound:  true });
 			var outbound = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { outbound: true });
@@ -147,7 +146,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 				return link.getSourceElement();
 			});
 			var placesAfter = outbound.map(link => {
-				return link.getSourceElement();
+				return link.getTargetElement();
 			});
 			// https://github.com/clientIO/joint/blob/master/demo/petri%20nets/src/pn.js#L145
 			placesBefore.forEach( p => {
@@ -155,24 +154,23 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 				inbound.filter(l => {
 					return l.getSourceElement() === p;
 				}).forEach( l => {
-					var token = V('circle', { r: 5, fill: '#feb662' });
+					var token = joint.V('circle', { r: 5, fill: '#feb662' });
 					l.findView(this._jointPaper).sendToken(token, 500);
 				})
 			});
 			placesAfter.forEach( p => {
-				p.set('tokens', p.get('tokens') - 1);
 				outbound.filter(l => {
-					return l.outbound() === p;
+					return l.getTargetElement() === p;
 				}).forEach( l => {
-					var token = V('circle', { r: 5, fill: '#feb662' });
+					var token = joint.V('circle', { r: 5, fill: '#feb662' });
 					l.findView(this._jointPaper).sendToken(token, 500, () => {
 						p.set('tokens', p.get('tokens') + 1);
+						this._decoratePetriNet();
 					});
 				})
 			});
 		})
-		
-
+		self._jointPaper.updateViews();
 	};
 
 	SimPetriNetWidget.prototype.resetPetriNet = function () {
@@ -184,7 +182,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 		const petriNet = this._webgmePetriNet;
 		
 		// https://github.com/clientIO/joint/blob/master/demo/petri%20nets/src/pn.js#L124
-		petriNet.setFireableEvents(Object.keys(petriNet.transitions).filter(transitionID => {
+		const events = Object.keys(petriNet.transitions).filter(transitionID => {
 			var placesBefore = this._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound: true })
 				.map(link => {
 					return link.getSourceElement();
@@ -199,7 +197,13 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 			petriNet.transitions[transitionID].joint.attr('body/stroke', isFireable ? 'blue' : '#9586fd');
 			
 			return isFireable;
-		}))
+		})
+		//console.log(events)
+		petriNet.setFireableEvents(events)
+		//Object.keys(petriNet.places).forEach(p => {
+		//	console.log(petriNet.places[p].name)
+		//	console.log(petriNet.places[p].joint.get('tokens'))
+		//})
 	};
 
 	SimPetriNetWidget.prototype._setCurrentState = function(newCurrent) {

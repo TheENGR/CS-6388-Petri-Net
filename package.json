@@ -2,8 +2,8 @@
   "name": "petrinet",
   "description": "PetriNet design studio for WebGME",
   "repository": {
-    "type":"git",
-    "url":"git@github.com:TheENGR/CS-6388-Petri-Net.git"
+    "type": "git",
+    "url": "git@github.com:TheENGR/CS-6388-Petri-Net.git"
   },
   "license": "MIT",
   "scripts": {

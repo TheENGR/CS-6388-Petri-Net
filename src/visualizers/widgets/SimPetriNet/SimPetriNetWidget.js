@@ -29,12 +29,12 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
         // set widget class
         this._el.addClass(WIDGET_CLASS);
 
-        this._jointSM = new joint.dia.Graph;
+        this._jointPetriNet = new joint.dia.Graph;
         this._jointPaper = new joint.dia.Paper({
             el: this._el,
             width : width,
             height: height,
-            model: this._jointSM,
+            model: this._jointPetriNet,
             interactive: false
         });
 
@@ -42,13 +42,13 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
         this._jointPaper.on('element:pointerdblclick', function(elementView) {
             const currentElement = elementView.model;
             // console.log(currentElement);
-            if (self._webgmeSM) {
-                // console.log(self._webgmeSM.id2state[currentElement.id]);
-                self._setCurrentState(self._webgmeSM.id2state[currentElement.id]);
+            if (self._webgmePetriNet) {
+                // console.log(self._webgmePetriNet.id2state[currentElement.id]);
+                self._setCurrentState(self._webgmePetriNet.id2state[currentElement.id]);
             }
         });
 
-        this._webgmeSM = null;
+        this._webgmePetriNet = null;
     };
 
     SimPetriNetWidget.prototype.onWidgetContainerResize = function (width, height) {
@@ -60,17 +60,17 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
         const self = this;
         console.log(machineDescriptor);
 
-        self._webgmeSM = machineDescriptor;
-        self._webgmeSM.current = self._webgmeSM.init;
-        self._jointSM.clear();
-        const sm = self._webgmeSM;
-        sm.id2state = {}; // this dictionary will connect the on-screen id to the state id
+        self._webgmePetriNet = machineDescriptor;
+        self._webgmePetriNet.current = self._webgmePetriNet.init;
+        self._jointPetriNet.clear();
+        const petriNet = self._webgmePetriNet;
+        petriNet.id2state = {}; // this dictionary will connect the on-screen id to the state id
         // first add the states
-        Object.keys(sm.states).forEach(stateId => {
+        Object.keys(petriNet.states).forEach(stateId => {
             let vertex = null;
-            if (sm.init === stateId) {
+            if (petriNet.init === stateId) {
                 vertex = new joint.shapes.standard.Circle({
-                    position: sm.states[stateId].position,
+                    position: petriNet.states[stateId].position,
                     size: { width: 20, height: 20 },
                     attrs: {
                         body: {
@@ -79,9 +79,9 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
                         }
                     }
                 });
-            } else if (sm.states[stateId].isEnd) {
+            } else if (petriNet.states[stateId].isEnd) {
                 vertex = new joint.shapes.standard.Circle({
-                    position: sm.states[stateId].position,
+                    position: petriNet.states[stateId].position,
                     size: { width: 30, height: 30 },
                     attrs: {
                         body: {
@@ -92,11 +92,11 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
                 });
             } else {
                 vertex = new joint.shapes.standard.Circle({
-                    position: sm.states[stateId].position,
+                    position: petriNet.states[stateId].position,
                     size: { width: 60, height: 60 },
                     attrs: {
                         label : {
-                            text: sm.states[stateId].name,
+                            text: petriNet.states[stateId].name,
                             //event: 'element:label:pointerdown',
                             fontWeight: 'bold',
                             //cursor: 'text',
@@ -111,19 +111,19 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
                     }
                 });
             }
-            vertex.addTo(self._jointSM);
-            sm.states[stateId].joint = vertex;
-            sm.id2state[vertex.id] = stateId;
+            vertex.addTo(self._jointPetriNet);
+            petriNet.states[stateId].joint = vertex;
+            petriNet.id2state[vertex.id] = stateId;
         });
 
         // then create the links
-        Object.keys(sm.states).forEach(stateId => {
-            const state = sm.states[stateId];
+        Object.keys(petriNet.states).forEach(stateId => {
+            const state = petriNet.states[stateId];
             Object.keys(state.next).forEach(event => {
                 state.jointNext = state.jointNext || {};
                 const link = new joint.shapes.standard.Link({
                     source: {id: state.joint.id},
-                    target: {id: sm.states[state.next[event]].joint.id},
+                    target: {id: petriNet.states[state.next[event]].joint.id},
                     attrs: {
                         line: {
                             strokeWidth: 2
@@ -149,7 +149,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
                         }
                     }]
                 });
-                link.addTo(self._jointSM);
+                link.addTo(self._jointPetriNet);
                 state.jointNext[event] = link;
             })
         });
@@ -165,11 +165,11 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 
     SimPetriNetWidget.prototype.fireEvent = function (event) {
         const self = this;
-        const current = self._webgmeSM.states[self._webgmeSM.current];
+        const current = self._webgmePetriNet.states[self._webgmePetriNet.current];
         const link = current.jointNext[event];
         const linkView = link.findView(self._jointPaper);
         linkView.sendToken(joint.V('circle', { r: 10, fill: 'black' }), {duration:500}, function() {
-           self._webgmeSM.current = current.next[event];
+           self._webgmePetriNet.current = current.next[event];
            self._decorateMachine();
         });
 
@@ -177,21 +177,21 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
     };
 
     SimPetriNetWidget.prototype.resetMachine = function () {
-        this._webgmeSM.current = this._webgmeSM.init;
+        this._webgmePetriNet.current = this._webgmePetriNet.init;
         this._decorateMachine();
     };
 
     SimPetriNetWidget.prototype._decorateMachine = function() {
-        const sm = this._webgmeSM;
-        Object.keys(sm.states).forEach(stateId => {
-            sm.states[stateId].joint.attr('body/stroke', '#333333');
+        const petriNet = this._webgmePetriNet;
+        Object.keys(petriNet.states).forEach(stateId => {
+            petriNet.states[stateId].joint.attr('body/stroke', '#333333');
         });
-        sm.states[sm.current].joint.attr('body/stroke', 'blue');
-        sm.setFireableEvents(Object.keys(sm.states[sm.current].next));
+        petriNet.states[petriNet.current].joint.attr('body/stroke', 'blue');
+        petriNet.setFireableEvents(Object.keys(petriNet.states[petriNet.current].next));
     };
 
     SimPetriNetWidget.prototype._setCurrentState = function(newCurrent) {
-        this._webgmeSM.current = newCurrent;
+        this._webgmePetriNet.current = newCurrent;
         this._decorateMachine();
     };
     

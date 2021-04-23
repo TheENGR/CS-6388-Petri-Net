@@ -43,13 +43,13 @@ define([
         //set Widget title
         this.setTitle('');
 
-        this.widget = new SimSMWidget(this.logger, this.$el);
+        this.widget = new SimPetriNetWidget(this.logger, this.$el);
 
         this.widget.setTitle = function (title) {
             self.setTitle(title);
         };
 
-        this.control = new SimSMControl({
+        this.control = new SimPetriNetControl({
             logger: this.logger,
             client: this._client,
             widget: this.widget

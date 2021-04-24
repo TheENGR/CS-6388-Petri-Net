@@ -1,10 +1,11 @@
 """
 This is where the implementation of the plugin code goes.
-The PetriNetClassification-class is imported from both run_plugin.py and run_debug.py
+The ReachCheck-class is imported from both run_plugin.py and run_debug.py
 """
 import sys
 import logging
 from webgme_bindings import PluginBase
+import json
 
 # Setup a logger
 logger = logging.getLogger('PetriNetClassification')
@@ -17,50 +18,101 @@ logger.addHandler(handler)
 
 
 class PetriNetClassification(PluginBase):
-	def main(self):
-		core = self.core
-		root_node = self.root_node
-		META = self.META
-		active_node = self.active_node # we assume the active node is the state machine node
+    def main(self):
+        self.send_notification('Analyzing...')
+        core = self.core
+        root_node = self.root_node
+        META = self.META
+        active_node = self.active_node # we assume the active node is the state machine node
 
-		visited = set()
-		states = set()
-		graph = {}
+        places = {}
+        transitions = {}
+        # we build the most simple graph representation possible
+        nodes = core.load_children(active_node)
+        for node in nodes:
+            if core.is_type_of(node, META['Place']):
+                places[core.get_path(node)] = {"inports": set(), "outports": set()}
+            if core.is_type_of(node, META['Transition']):
+                transitions[core.get_path(node)] = {"inports": set(), "outports": set()}
+        for node in nodes:
+            if core.is_type_of(node, META['Arc']):
+                if core.is_type_of(node, META['PlaceToTransitionArc']):
+                    places[core.get_pointer_path(node, 'src')]["outports"].add(core.get_pointer_path(node, 'dst'))
+                    transitions[core.get_pointer_path(node, 'dst')]["inports"].add(core.get_pointer_path(node, 'src'))
+                else:
+                    places[core.get_pointer_path(node, 'dst')]["inports"].add(core.get_pointer_path(node, 'src'))
+                    transitions[core.get_pointer_path(node, 'src')]["outports"].add(core.get_pointer_path(node, 'dst'))
 
-		# we build the most simple graph representation possible
-		nodes = core.load_children(active_node)
-		for node in nodes:
-			if core.is_type_of(node, META['State']):
-				states.add(core.get_path(node))
-			if core.is_type_of(node, META['Init']):
-				visited.add(core.get_path(node))
-		for node in nodes:
-			if core.is_type_of(node, META['Transition']):
-				if core.get_pointer_path(node, 'src') in graph:
-					graph[core.get_pointer_path(node, 'src')].append(core.get_pointer_path(node, 'dst'))
-				else:
-					graph[core.get_pointer_path(node, 'src')] = [core.get_pointer_path(node, 'dst')]
-		
-		# now we just update the visited set
-		old_size = len(visited)
-		new_size = 0
+        # Free Choice:
+        if len(set([frozenset(transition['inports']) for transition in transitions.values()])) == len(transitions):
+            self.send_notification('This Petri Net is a Free Choice Petri Net')
+        else:
+            self.send_notification('This Petri Net is not a Free Choice Petri Net')
+        # State Machine
+        isStateMachine = True
+        for transition in transitions.values():
+            if len(transition['inports']) != 1 or len(transition['outports']) != 1:
+                isStateMachine = False;
+                break
+        if isStateMachine:
+            self.send_notification('This Petri Net is a State Machine')
+        else:
+            self.send_notification('This Petri Net is not a State Machine')
+        # Marked Graph
+        isMarkedGraph = True
+        for place in places.values():
+            if len(place['inports']) != 1 or len(place['outports']) != 1:
+                isMarkedGraph = False;
+                break
+        if isMarkedGraph:
+            self.send_notification('This Petri Net is a Marked Graph')
+        else:
+            self.send_notification('This Petri Net is not a Marked Graph')
+        # Workflow Net
+        start = ""
+        end = ""
+        for path, place in places.items():
+            if len(place['inports']) == 0:
+                if start == "":
+                    start = path
+                else:
+                    start = ""
+                    break
+            if len(place['outports']) == 0:
+                if end == "":
+                    end = path
+                else:
+                    end = ""
+                    break
+        isWorkflowNet = start != "" and end != ""
 
-		while old_size != new_size:
-			old_size = len(visited)
-			elements = list(visited)
-			for element in elements:
-				if element in graph:
-					for next_state in graph[element]:
-						visited.add(next_state)
-			new_size = len(visited)
-		
-		# now we just simply check if we have a difference between the foll set of states and the reachable ones
-		if len(states.difference(visited)) == 0:
-			# everything is fine
-			self.send_notification('Your state machine is well formed')
-		else:
-			# we need some states that are unreachable
-			self.send_notification('Your state machine has unreachable states')
+        def isReachable(graph, s, d):
+            visited = [s]
+            queue = [s]
+
+            while queue:
+                n = queue.pop(0)
+                if n == d:
+                    return True
+                for i in graph[n]['outports']:
+                    if i not in visited:
+                        queue.append(i)
+                        visited.append(i)
+            return False
+        
+        if isWorkflowNet:
+            graph = {**places, **transitions}
+            for location in graph:
+                if not isReachable(graph, location, end):
+                    isWorkflowNet = False
+                    break
+        if isWorkflowNet:
+            self.send_notification('This Petri Net is a Workflow Net')
+        else:
+            self.send_notification('This Petri Net is not a Workflow Net')
+            
+                
+        
 
 
 

@@ -39,7 +39,6 @@ define([
 	}
 
 	SimPetriNetControl.prototype._initWidgetEventHandlers = function () {
-	console.log("SimPetriNetControl _initWidgetEventHandlers")
 		this._widget.onNodeClick = function (id) {
 			// Change the current active object
 			WebGMEGlobal.State.registerActiveObject(id);
@@ -51,7 +50,6 @@ define([
 	// defines the parts of the project that the visualizer is interested in
 	// (this allows the browser to then only load those relevant parts).
 	SimPetriNetControl.prototype.selectedObjectChanged = function (nodeId) {
-	console.log("SimPetriNetControl selectedObjectChanged")
 		var self = this;
 
 		// Remove current territory patterns
@@ -78,7 +76,6 @@ define([
 
 	/* * * * * * * * Node Event Handling * * * * * * * */
 	SimPetriNetControl.prototype._eventCallback = function (events) {
-	console.log("SimPetriNetControl _eventCallback")
 		const self = this;
 		console.log(events);
 		events.forEach(event => {
@@ -110,7 +107,6 @@ define([
 
 	/* * * * * * * * PetriNet manipulation functions * * * * * * * */
 	SimPetriNetControl.prototype._initPetriNet = function () {
-	console.log("SimPetriNetControl _initPetriNet")
 		const self = this;
 		//just for the ease of use, lets create a META dictionary
 		const META = {};
@@ -141,14 +137,12 @@ define([
 	};
 
 	SimPetriNetControl.prototype.clearPetriNet = function () {
-	console.log("SimPetriNetControl clearPetriNet")
 		const self = this;
 		self._networkRootLoaded = false;
 		self._widget.destroyPetriNet();
 	};
 
 	SimPetriNetControl.prototype.setFireableEvents = function (events) {
-	console.log("SimPetriNetControl setFireableEvents")
 		this._fireableEvents = [];
 		if (events && events.length > 0) {
 			let numEvents = events.length;
@@ -165,7 +159,6 @@ define([
 
 	/* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
 	SimPetriNetControl.prototype.destroy = function () {
-	console.log("SimPetriNetControl destroy")
 	this._detachClientEventListeners();
 		this._removeToolbarItems();
 	};
@@ -180,7 +173,6 @@ define([
 	};
 
 	SimPetriNetControl.prototype.onActivate = function () {
-	console.log("SimPetriNetControl onActivate")
 	this._attachClientEventListeners();
 		this._displayToolbarItems();
 
@@ -190,15 +182,12 @@ define([
 	};
 
 	SimPetriNetControl.prototype.onDeactivate = function () {
-	console.log("SimPetriNetControl onDeactivate")
 	this._detachClientEventListeners();
 		this._hideToolbarItems();
 	};
 
 	/* * * * * * * * * * Updating the toolbar * * * * * * * * * */
 	SimPetriNetControl.prototype._displayToolbarItems = function () {
-	console.log("SimPetriNetControl _displayToolbarItems")
-
 		if (this._toolbarInitialized === true) {
 			for (var i = this._toolbarItems.length; i--;) {
 				this._toolbarItems[i].show();
@@ -212,8 +201,6 @@ define([
 	};
 
 	SimPetriNetControl.prototype._hideToolbarItems = function () {
-	console.log("SimPetriNetControl _hideToolbarItems")
-
 		if (this._toolbarInitialized === true) {
 			for (var i = this._toolbarItems.length; i--;) {
 				this._toolbarItems[i].hide();
@@ -222,8 +209,6 @@ define([
 	};
 
 	SimPetriNetControl.prototype._removeToolbarItems = function () {
-	console.log("SimPetriNetControl _removeToolbarItems")
-
 		if (this._toolbarInitialized === true) {
 			for (var i = this._toolbarItems.length; i--;) {
 				this._toolbarItems[i].destroy();
@@ -232,7 +217,6 @@ define([
 	};
 
 	SimPetriNetControl.prototype._initializeToolbar = function () {
-	console.log("SimPetriNetControl _initializeToolbar")
 		var self = this,
 			toolBar = WebGMEGlobal.Toolbar;
 

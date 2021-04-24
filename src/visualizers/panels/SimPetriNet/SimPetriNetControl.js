@@ -248,7 +248,7 @@ define([
 			title: 'Reset simulator',
 			icon: 'glyphicon glyphicon-fast-backward',
 			clickFn: function (/*data*/) {
-				self._widget.resetPetriNet();
+				self._initPetriNet();
 			}
 		});
 		this._toolbarItems.push(this.$btnResetPetriNet);
@@ -258,7 +258,7 @@ define([
 			title: 'Fire event',
 			icon: 'glyphicon glyphicon-play',
 			clickFn: function (/*data*/) {
-				self._widget.fireEvent(self._fireableEvents[0]);
+				self._widget.fireEvent(self._fireableEvents);
 			}
 		});
 		this._toolbarItems.push(this.$btnSingleEvent);

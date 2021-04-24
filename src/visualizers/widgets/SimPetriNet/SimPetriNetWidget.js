@@ -25,8 +25,8 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 	SimPetriNetWidget.prototype._initialize = function () {
 		console.log(joint);
 		var width = this._el.width(),
-			height = this._el.height(),
-			self = this;
+		height = this._el.height(),
+		self = this;
 
 		// set widget class
 		this._el.addClass(WIDGET_CLASS);
@@ -100,7 +100,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 						'fill': '#fe854f'
 					},
 					'.root': {
-						'fill': '#black',
+						'fill': 'black',
 						'stroke': 'black'
 					}
 				}
@@ -144,37 +144,39 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 		if (fireableTransitions === undefined) {
 			return
 		}
-		console.log(fireableTransitions)
 		fireableTransitions.forEach(transitionID => {
-			var inbound  = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound:  true });
-			var outbound = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { outbound: true });
-			var placesBefore = inbound.map(link => {
-				return link.getSourceElement();
-			});
-			var placesAfter = outbound.map(link => {
-				return link.getTargetElement();
-			});
-			// https://github.com/clientIO/joint/blob/master/demo/petri%20nets/src/pn.js#L145
-			placesBefore.forEach( p => {
-				p.set('tokens', p.get('tokens') - 1);
-				inbound.filter(l => {
-					return l.getSourceElement() === p;
-				}).forEach( l => {
-					var token = joint.V('circle', { r: 5, fill: '#feb662' });
-					l.findView(this._jointPaper).sendToken(token, 500);
-				})
-			});
-			placesAfter.forEach( p => {
-				outbound.filter(l => {
-					return l.getTargetElement() === p;
-				}).forEach( l => {
-					var token = joint.V('circle', { r: 5, fill: '#feb662' });
-					l.findView(this._jointPaper).sendToken(token, 500, () => {
-						p.set('tokens', p.get('tokens') + 1);
-						this._decoratePetriNet();
-					});
-				})
-			});
+			//Make sure it is still fireable
+			if (this._eventIsFireable(transitionID)) {
+				var inbound  = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound:  true });
+				var outbound = self._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { outbound: true });
+				var placesBefore = inbound.map(link => {
+					return link.getSourceElement();
+				});
+				var placesAfter = outbound.map(link => {
+					return link.getTargetElement();
+				});
+				// https://github.com/clientIO/joint/blob/master/demo/petri%20nets/src/pn.js#L145
+				placesBefore.forEach( p => {
+					p.set('tokens', p.get('tokens') - 1);
+					inbound.filter(l => {
+						return l.getSourceElement() === p;
+					}).forEach( l => {
+						var token = joint.V('circle', { r: 5, fill: '#feb662' });
+						l.findView(this._jointPaper).sendToken(token, 500);
+					})
+				});
+				placesAfter.forEach( p => {
+					outbound.filter(l => {
+						return l.getTargetElement() === p;
+					}).forEach( l => {
+						var token = joint.V('circle', { r: 5, fill: '#feb662' });
+						l.findView(this._jointPaper).sendToken(token, 500, () => {
+							p.set('tokens', p.get('tokens') + 1);
+							this._decoratePetriNet();
+						});
+					})
+				});
+			}
 		})
 		self._jointPaper.dumpViews();
 	};
@@ -184,7 +186,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 		this._decoratePetriNet();
 	};
 	
-	SimPetriNetWidget.prototype._eventIsFireable = = function(transitionID) {
+	SimPetriNetWidget.prototype._eventIsFireable = function(transitionID) {
 		const petriNet = this._webgmePetriNet;
 		
 		var placesBefore = this._jointGraph.getConnectedLinks(petriNet.transitions[transitionID].joint, { inbound: true })
@@ -198,7 +200,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 			}
 		});
 
-		petriNet.transitions[transitionID].joint.attr('body/stroke', isFireable ? 'blue' : 'black');
+		petriNet.transitions[transitionID].joint.attr('.root/fill', isFireable ? 'blue' : 'black');
 		
 		return isFireable;
 	}
@@ -208,6 +210,9 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 		
 		// https://github.com/clientIO/joint/blob/master/demo/petri%20nets/src/pn.js#L124
 		const events = Object.keys(petriNet.transitions).filter(transitionID => this._eventIsFireable(transitionID))
+		if (events.length === 0) {
+			Object.keys(petriNet.transitions).forEach(transitionID => petriNet.transitions[transitionID].joint.attr('.root/fill', 'red'))
+		}
 		petriNet.setFireableEvents(events)
 	};
 

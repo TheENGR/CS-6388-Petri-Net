@@ -41,9 +41,18 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 			defaultAnchor: { name: 'perpendicular' },
 			defaultConnectionPoint: { name: 'boundary' },
 			model: this._jointGraph,
-			interactive: false
+			interactive: false,
+			elementView: joint.shapes.pn.PlaceView.extend({
+				renderTokens: function() { 
+					try {
+						joint.shapes.pn.PlaceView.prototype.renderTokens.call(this)
+					} catch {
+						console.log(this.vel)
+					}
+				}
+			})
 		});
-		
+
 		this.PetriNet = joint.shapes.pn;
 		this._webgmePetriNet = null;
 	};
@@ -80,7 +89,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 				},
 				tokens: petriNet.places[ID].tokens
 			});
-			//petriNet.places[ID].joint.addTo(self._jointGraph);
+			petriNet.places[ID].joint.addTo(self._jointGraph);
 		});
 		
 		// Then add the transitions
@@ -98,7 +107,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 					}
 				}
 			});
-			//petriNet.transitions[ID].joint.addTo(self._jointGraph);
+			petriNet.transitions[ID].joint.addTo(self._jointGraph);
 		});
 		
 		// Finally add the links
@@ -117,15 +126,11 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 					}
 				}
 			});
-			//petriNet.arcs[ID].joint.addTo(self._jointGraph);
+			petriNet.arcs[ID].joint.addTo(self._jointGraph);
 		});
-		self._jointGraph.addCell([...Object.values(petriNet.places).map(p => p.joint), ...Object.values(petriNet.transitions).map(t => t.joint)])
-		self._jointGraph.addCell(Object.values(petriNet.arcs).map(a => a.joint))
+
+
 		//now refresh the visualization
-		console.log(this.PetriNet.PlaceView)
-		console.log(this.PetriNet.PlaceView.prototype)
-		this.PetriNet.PlaceView.prototype.render()
-		self._jointPaper.updateViews();
 		self._decoratePetriNet();
 	};
 
@@ -172,7 +177,7 @@ define(['jointjs', 'css!./styles/SimPetriNetWidget.css'], function (joint) {
 				})
 			});
 		})
-		self._jointPaper.updateViews();
+		self._jointPaper.dumpViews();
 	};
 
 	SimPetriNetWidget.prototype.resetPetriNet = function () {
